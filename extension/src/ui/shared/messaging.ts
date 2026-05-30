@@ -1,6 +1,6 @@
 // Typed message protocol between UI surfaces and the Consul Brain (service worker).
 
-import type { Settings, Turn } from "../../types.ts";
+import type { PassportActivity, Settings, Turn } from "../../types.ts";
 
 export type BrainRequest =
   | { type: "ping" }
@@ -9,7 +9,9 @@ export type BrainRequest =
   // Checkpoint ritual
   | { type: "checkpoint:start"; dest: string; tabId?: number }
   | { type: "checkpoint:answer"; sessionId: string; text: string }
-  | { type: "checkpoint:accept"; sessionId: string };
+  | { type: "checkpoint:accept"; sessionId: string }
+  // Dashboard data
+  | { type: "data:passport" };
 
 export type BrainResponse =
   | { type: "pong" }
@@ -20,7 +22,9 @@ export type BrainResponse =
   | { type: "checkpoint:started"; sessionId: string; personaId: string; turn: Turn }
   | { type: "checkpoint:turn"; turn: Turn }
   | { type: "checkpoint:granted"; redirectTo: string }
-  | { type: "checkpoint:denied"; message: string };
+  | { type: "checkpoint:denied"; message: string }
+  // Dashboard data
+  | { type: "passport"; activities: PassportActivity[] };
 
 /** Send a typed request to the brain and await its typed response. */
 export async function sendToBrain(req: BrainRequest): Promise<BrainResponse> {

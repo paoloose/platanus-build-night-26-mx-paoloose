@@ -2,7 +2,7 @@
 // (exactly one active Activity; stamps belong to an Activity).
 
 import { db } from "./db.ts";
-import type { Activity, Stamp, VisitRecord } from "../types.ts";
+import type { Activity, PassportActivity, Stamp, VisitRecord } from "../types.ts";
 
 export const now = (): number => Date.now();
 export const newId = (): string => crypto.randomUUID();
@@ -101,6 +101,19 @@ export async function findValidStamp(
 
 export async function stampsForActivity(activityId: string): Promise<Stamp[]> {
   return (await db()).getAllFromIndex("stamps", "by-activity", activityId);
+}
+
+/** All activities (newest first) with their stamps, for the passport view. */
+export async function getPassport(): Promise<PassportActivity[]> {
+  const database = await db();
+  const activities = (await database.getAll("activities")).sort((a, b) => b.createdAt - a.createdAt);
+  const allStamps = await database.getAll("stamps");
+  return activities.map((a) => ({
+    ...a,
+    stamps: allStamps
+      .filter((s) => s.activityId === a.id)
+      .sort((x, y) => y.grantedAt - x.grantedAt),
+  }));
 }
 
 // ---- Visits ----

@@ -6,22 +6,13 @@ import type { Persona, Turn } from "../../types.ts";
 import { loadPersona } from "../../shared/persona.ts";
 import { isProposal } from "../../brain/agent/tools.ts";
 import { sendToBrain, type BrainResponse } from "../shared/messaging.ts";
+import { applyTheme } from "../shared/theme.ts";
 import { useTypewriter } from "./useTypewriter.ts";
 import { ConsulStage } from "./ConsulStage.tsx";
 import { AnswerBox } from "./AnswerBox.tsx";
 import { OfferModal } from "./OfferModal.tsx";
 
 type Phase = "loading" | "talking" | "denied" | "error";
-
-function applyTheme(persona: Persona) {
-  if (!persona.themeCss) return;
-  const existing = document.getElementById("wp-persona-theme");
-  if (existing) existing.remove();
-  const style = document.createElement("style");
-  style.id = "wp-persona-theme";
-  style.textContent = persona.themeCss;
-  document.head.appendChild(style);
-}
 
 export function App() {
   const [persona, setPersona] = useState<Persona | null>(null);

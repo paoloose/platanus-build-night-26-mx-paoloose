@@ -7,6 +7,7 @@ import { getSettings, setSettings } from "./settings.ts";
 import { domainOf } from "./url.ts";
 import { initInterceptor } from "./interceptor.ts";
 import { acceptCheckpoint, answerCheckpoint, startCheckpoint } from "./checkpoint.ts";
+import { getPassport } from "./state.ts";
 
 async function handle(req: BrainRequest): Promise<BrainResponse> {
   switch (req.type) {
@@ -32,6 +33,9 @@ async function handle(req: BrainRequest): Promise<BrainResponse> {
     case "checkpoint:accept":
       return acceptCheckpoint(req.sessionId);
 
+    case "data:passport":
+      return { type: "passport", activities: await getPassport() };
+
     default:
       return { type: "error", error: `unknown request: ${(req as { type: string }).type}` };
   }
@@ -45,8 +49,12 @@ export function initBrain(): void {
     return true; // keep the message channel open for the async response
   });
 
-  chrome.runtime.onInstalled.addListener(() => {
+  chrome.runtime.onInstalled.addListener((details) => {
     console.log("[web-passport] consul brain installed");
+    // Open the onboarding / dashboard page on first install.
+    if (details.reason === "install") {
+      chrome.tabs.create({ url: chrome.runtime.getURL("app.html") });
+    }
   });
 
   // Visa / break expiry. The mid-session overlay summon lands in M2; for now we log.

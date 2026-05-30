@@ -100,7 +100,18 @@ export interface PersonaExample {
   say: string;
 }
 
+/** A line the consul speaks during onboarding; each carries its own emotion. */
+export interface WelcomeLine {
+  emotion: string;
+  text: string;
+}
+
 /** A persona package (folder); see spec §5, §13. Declarative data, never code. */
+/** An Activity with its stamps, for the passport view. */
+export interface PassportActivity extends Activity {
+  stamps: Stamp[];
+}
+
 export interface Persona {
   id: string;
   name: string;
@@ -110,10 +121,14 @@ export interface Persona {
   version?: string;
   /** marketplace-facing blurb */
   description?: string;
+  /** the resting/idle emotion (persona.json: default_emotion); shown when not speaking */
+  defaultEmotion?: string;
   /** internal: voice, rules of conduct, gatekeeping philosophy */
   systemPrompt: string;
   /** few-shot flavor for the model */
   examples?: PersonaExample[];
+  /** onboarding lines spoken on the landing page (persona.json: welcome_dialog) */
+  welcomeDialog?: WelcomeLine[];
   /** declared emotion set (loaded from emotions_criteria.json) */
   emotions: EmotionDef[];
   /** contents of theme.css, if present — applied over the boring defaults */

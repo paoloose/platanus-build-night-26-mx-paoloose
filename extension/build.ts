@@ -16,6 +16,7 @@ const entrypoints = [
   "./src/offscreen.ts",
   "./src/checkpoint.tsx",
   "./src/popup.tsx",
+  "./src/app.tsx",
 ];
 
 // Copy bundled persona packages into dist/personas/ so the extension can fetch
