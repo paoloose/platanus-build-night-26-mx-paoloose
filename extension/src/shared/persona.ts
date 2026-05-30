@@ -29,6 +29,22 @@ function packagedBaseUrl(personaId: string): string {
   return chrome.runtime.getURL(`dist/personas/${personaId}/`);
 }
 
+export interface PersonaSummary {
+  id: string;
+  name: string;
+}
+
+/** The installed/bundled personas, from the build-generated index. */
+export async function listPersonas(): Promise<PersonaSummary[]> {
+  try {
+    const res = await fetch(chrome.runtime.getURL("dist/personas/index.json"));
+    if (!res.ok) return [];
+    return (await res.json()) as PersonaSummary[];
+  } catch {
+    return [];
+  }
+}
+
 export async function loadPersona(personaId: string): Promise<Persona> {
   const base = packagedBaseUrl(personaId);
 

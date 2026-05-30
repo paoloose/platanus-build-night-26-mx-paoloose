@@ -6,8 +6,9 @@ import type { Settings } from "../types.ts";
 const KEY = "settings";
 
 const DEFAULTS: Settings = {
+  enabled: true,
   apiKey: null,
-  personaId: "default",
+  personaId: "monika",
   clerkSession: null,
   watchRules: {},
 };

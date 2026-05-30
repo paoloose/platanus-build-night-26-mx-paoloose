@@ -11,7 +11,9 @@ export type BrainRequest =
   | { type: "checkpoint:answer"; sessionId: string; text: string }
   | { type: "checkpoint:accept"; sessionId: string }
   // Dashboard data
-  | { type: "data:passport" };
+  | { type: "data:passport" }
+  // Activity control
+  | { type: "activity:setActive"; id: string };
 
 export type BrainResponse =
   | { type: "pong" }

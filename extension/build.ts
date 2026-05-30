@@ -23,7 +23,7 @@ const entrypoints = [
 // them at runtime (the default persona ships inside the extension). Source of
 // truth is the repo-root personas/ folder.
 async function copyPersonas() {
-  const { cp, mkdir, readdir } = await import("node:fs/promises");
+  const { cp, mkdir, readdir, writeFile } = await import("node:fs/promises");
   const src = "../personas";
   const dest = "./dist/personas";
   await mkdir(dest, { recursive: true });
@@ -33,15 +33,26 @@ async function copyPersonas() {
       .filter((d) => d.isDirectory())
       .map((d) => d.name);
   } catch {
-    return;
+    return [];
   }
+  const index: Array<{ id: string; name: string }> = [];
   for (const name of names) {
     // Skip personas without a manifest (e.g. an empty work-in-progress folder).
     if (!(await Bun.file(`${src}/${name}/persona.json`).exists())) continue;
     await cp(`${src}/${name}`, `${dest}/${name}`, { recursive: true });
+    const manifest = (await Bun.file(`${src}/${name}/persona.json`).json()) as {
+      id: string;
+      name: string;
+    };
+    index.push({ id: manifest.id, name: manifest.name });
   }
-  return names;
+  // An index of installed/bundled personas, for the popup switcher.
+  await writeFile(`${dest}/index.json`, JSON.stringify(index, null, 2));
+  return index;
 }
+
+// Build-time environment: debug (default) exposes dev-only UI; prod hides it.
+const WEBPASSPORT_ENV = process.env.WEBPASSPORT_ENV ?? "debug";
 
 async function build() {
   const result = await Bun.build({
@@ -52,6 +63,9 @@ async function build() {
     naming: "[name].[ext]",
     minify: false,
     sourcemap: "inline",
+    define: {
+      "process.env.WEBPASSPORT_ENV": JSON.stringify(WEBPASSPORT_ENV),
+    },
   });
 
   if (!result.success) {
@@ -60,8 +74,10 @@ async function build() {
     if (!watch) process.exit(1);
     return;
   }
-  await copyPersonas();
-  console.log(`Build complete (${result.outputs.length} outputs + personas)`);
+  const index = await copyPersonas();
+  console.log(
+    `Build complete (${result.outputs.length} outputs, ${index?.length ?? 0} personas, env=${WEBPASSPORT_ENV})`,
+  );
 }
 
 await build();

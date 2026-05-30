@@ -4,6 +4,7 @@
 
 import { domainOf, checkpointUrlFor } from "./url.ts";
 import { findValidStamp, getActiveActivity, recordVisit } from "./state.ts";
+import { getSettings } from "./settings.ts";
 
 interface NavDetails {
   tabId: number;
@@ -16,6 +17,9 @@ async function onBeforeNavigate(details: NavDetails): Promise<void> {
 
   const domain = domainOf(details.url);
   if (!domain) return; // extension/browser pages and non-http(s) are never gated
+
+  const settings = await getSettings();
+  if (!settings.enabled) return; // global toggle off → consul stands down
 
   const active = await getActiveActivity();
   if (active) {

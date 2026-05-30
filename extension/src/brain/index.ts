@@ -7,7 +7,7 @@ import { getSettings, setSettings } from "./settings.ts";
 import { domainOf } from "./url.ts";
 import { initInterceptor } from "./interceptor.ts";
 import { acceptCheckpoint, answerCheckpoint, startCheckpoint } from "./checkpoint.ts";
-import { getPassport } from "./state.ts";
+import { getPassport, setActiveActivity } from "./state.ts";
 
 async function handle(req: BrainRequest): Promise<BrainResponse> {
   switch (req.type) {
@@ -35,6 +35,10 @@ async function handle(req: BrainRequest): Promise<BrainResponse> {
 
     case "data:passport":
       return { type: "passport", activities: await getPassport() };
+
+    case "activity:setActive":
+      await setActiveActivity(req.id);
+      return { type: "ok" };
 
     default:
       return { type: "error", error: `unknown request: ${(req as { type: string }).type}` };

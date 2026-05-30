@@ -71,6 +71,8 @@ export interface VisitRecord {
 }
 
 export interface Settings {
+  /** Global on/off for consul gating (debug toggle; defaults on). */
+  enabled: boolean;
   /** BYOK Claude key (local only) */
   apiKey: string | null;
   /** active persona id */
