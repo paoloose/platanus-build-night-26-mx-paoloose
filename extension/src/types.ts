@@ -83,21 +83,40 @@ export interface Settings {
 
 // ---- Persona (declarative package; spec §5, §13) ----
 
+/** One declared emotion, from emotions/emotions_criteria.json. */
 export interface EmotionDef {
   /** the enum value the agent may emit via `emotion` */
-  state: string;
-  /** expression asset rendered by the UI for this state */
-  sprite: string;
-  /** optional voice/tone hint surfaced to the model */
-  toneGuidance?: string;
+  code: string;
+  /** human-readable label */
+  name: string;
+  /** asset path relative to the persona folder, e.g. "emotions/happy.png" */
+  asset: string;
+  /** when this emotion applies — surfaced to the model so it picks deliberately */
+  criteria: string;
 }
 
+export interface PersonaExample {
+  situation: string;
+  say: string;
+}
+
+/** A persona package (folder); see spec §5, §13. Declarative data, never code. */
 export interface Persona {
   id: string;
   name: string;
-  avatar: string;
-  /** persona-defined emotion set */
-  emotions: EmotionDef[];
-  /** voice, rules of conduct, gatekeeping philosophy */
+  tagline?: string;
+  origin?: string;
+  author?: string;
+  version?: string;
+  /** marketplace-facing blurb */
+  description?: string;
+  /** internal: voice, rules of conduct, gatekeeping philosophy */
   systemPrompt: string;
+  /** few-shot flavor for the model */
+  examples?: PersonaExample[];
+  /** declared emotion set (loaded from emotions_criteria.json) */
+  emotions: EmotionDef[];
+  /** contents of theme.css, if present — applied over the boring defaults */
+  themeCss?: string;
+  metadata?: Record<string, unknown>;
 }

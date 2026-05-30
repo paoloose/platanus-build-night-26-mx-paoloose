@@ -193,32 +193,56 @@ Settings {
 
 ## 5. Consul persona
 
-A **persona is a self-contained, plugin-ready package**. Critically, **each persona
-declares its own set of states/emotions** — there is no fixed global list.
+A **persona is a self-contained, plugin-ready package — a folder**. Critically, **each
+persona declares its own set of states/emotions** (no fixed global list) and may **fully
+re-skin the UI** via a stylesheet against a stable class contract.
 
+### Folder layout
 ```
-Persona {
-  id: string
-  name: string
-  avatar: AssetRef
-  emotions: EmotionDef[]       // persona-defined; e.g. suspicious / pleased /
-                               //   theatrical_rage / disappointed / smug
-  systemPrompt: string         // voice, rules of conduct, gatekeeping philosophy
-}
-EmotionDef {
-  state: string                // the enum value the agent may emit via `emotion`
-  sprite: AssetRef             // expression rendered by the UI for this state
-  toneGuidance?: string        // optional voice/tone hint surfaced to the model
-}
+persona/<id>/
+  persona.json                 // identity, personality, internal instructions, examples,
+                               //   marketplace metadata  (see below)
+  theme.css                   // optional UI override against the class contract (§8.5);
+                               //   shipped defaults are deliberately boring
+  emotions/
+    emotions_criteria.json     // declares each emotion: code, readable name, asset, criteria
+    <code>.<ext>               // one image per declared emotion (png/webp/...)
 ```
 
-- The consul's current emotion is **agent-driven**: every message it emits carries an
-  `emotion` field, **validated at runtime against the active persona's declared set**.
-- The UI simply renders whatever expression the active persona maps that state to.
-- v1 ships **one** fully-built persona — a theatrical, pompous-but-secretly-caring border
-  consul who breaks the fourth wall and references your real day ("you told me you were
-  shipping the parser — and yet, here we are at x.com"). The *shape* is plugin-ready so the
-  future marketplace can add more.
+### `persona.json`
+```
+{
+  id, name, tagline, origin, author, version,
+  description,                 // marketplace-facing blurb
+  systemPrompt,                // internal: voice, rules of conduct, gatekeeping philosophy
+  examples?: [{ situation, say }]   // few-shot flavor for the model
+  metadata?: { ... }
+}
+```
+
+### `emotions/emotions_criteria.json`
+```
+{
+  emotions: [
+    {
+      code,                    // the enum value the agent emits via `emotion`
+      name,                    // human-readable label
+      asset,                   // path relative to the persona folder, e.g. "emotions/happy.png"
+      criteria                 // when this emotion applies — surfaced to the model so it
+                               //   picks emotions deliberately
+    }, ...
+  ]
+}
+```
+
+- The consul's current emotion is **agent-driven**: every message carries an `emotion`,
+  **validated at runtime against the persona's declared `code` set**; the per-emotion
+  `criteria` are injected into the prompt so the choice is intentional. Undeclared → neutral.
+- The UI renders the asset mapped to the current emotion and applies the persona's
+  `theme.css` over the boring defaults.
+- v1 ships **one** fully-built persona: **Monika** (Doki Doki Literature Club) — warm,
+  literary, fourth-wall-breaking, unsettlingly attentive; emotions `happy` / `curious` /
+  `worried` / `upset`. The *shape* is plugin-ready for the future marketplace.
 
 ---
 
@@ -309,6 +333,52 @@ list but the server's shape anticipates it.
 - **Overlay (tab limit):** opening tab #(maxTabs + 1) for a domain → intercept that tab.
 - **Activity fit:** entering a domain that doesn't fit the active Activity → the consul may
   propose `create_activity` / `switch_activity` / `start_break_activity`.
+
+### 8.5 UI layout & interaction model
+
+The checkpoint page and the mid-session overlay share **one** UI component, themed by the
+active persona.
+
+- **Persona on the right.** A large emotion portrait (the asset for the current emotion)
+  anchors the right side; the consul's words sit to its left.
+- **Ask-answer, not chat.** The UI shows **only the consul's current utterance** and **one
+  answer input** — there is **no visible scrolling transcript**. (The full transcript is
+  always stored internally on the Stamp and fed to the model; the *user* just sees the
+  latest line + their reply box.)
+- **Streaming.** The consul's line is **typed out as it streams** from the model.
+- **Offer prompt = modal over everything.** When the agent attaches a **proposal**
+  (`offer_stamp` / `deny_entry` / `start_break_activity` / `create_activity` / …), an
+  **Accept / Argue** dialog rises **on top of all elements** over a **dimmed (transparent
+  black) backdrop**. Accept commits; Argue dismisses the modal and returns to the
+  ask-answer view for another turn.
+- **Stamp animation** plays on accept of a stamp before the redirect.
+
+#### CSS class contract (persona `theme.css` overrides these)
+Shipped defaults are intentionally plain; personas restyle via these stable, meaningful
+class names (BEM-ish). Personas **theme**, they don't change structure.
+```
+.wp-root            // full-surface container
+.wp-stage           // dialogue (left) + persona (right) layout
+.wp-persona         //   persona portrait column (right)
+.wp-persona__sprite //   the current-emotion image
+.wp-persona__name   //   name plate
+.wp-dialogue        //   consul's current utterance area (left)
+.wp-dialogue__text  //   the streamed text (typewriter target)
+.wp-answer          //   the user's answer area ("chat prompt")
+.wp-answer__input
+.wp-answer__submit
+.wp-offer           //   proposal modal (on top of everything)
+.wp-offer__backdrop //   dimmed transparent-black backdrop
+.wp-offer__card
+.wp-offer__title
+.wp-offer__detail   //   e.g. "10 min · max 3 tabs"
+.wp-offer__accept
+.wp-offer__argue
+.wp-stamp           //   stamp animation element
+```
+A persona's `theme.css` is loaded **after** the default sheet so its rules win. Emotion
+state is also exposed as a `data-emotion="<code>"` attribute on `.wp-root` for state-based
+styling.
 
 ---
 
@@ -413,19 +483,13 @@ This keeps the marketplace safe (no third-party code runs in the user's browser)
 Web-Store-compliant. The **Brain interprets** these packages.
 
 ### Persona Package format
-A persona is a self-describing package = **manifest JSON + image assets** (no code):
-```
-PersonaPackage {
-  manifest: Persona            // the §5 struct: id, name, systemPrompt, emotions[]
-  assets: {                    // referenced by the manifest
-    avatar: <image>
-    sprites: { [emotionState]: <image> }   // one per declared emotion
-  }
-}
-```
-On install the Brain **validates** the manifest against the `Persona` schema (every
-declared emotion has a sprite; required fields present), caches assets, and stores the
-persona in IndexedDB. An undeclared `emotion` emitted at runtime clamps to neutral (§10).
+A persona is the **folder** described in §5 — `persona.json` + `emotions/emotions_criteria.json`
++ one image per emotion + optional `theme.css`. **No code.** For transport (install-by-URL
+or web install) the folder is delivered as a manifest + asset list (e.g. a small zip or a
+JSON index pointing at asset URLs); on install the Brain **validates** it (persona.json
+well-formed; every emotion in `emotions_criteria.json` has an existing asset; theme.css, if
+present, is plain CSS), caches assets, and stores the persona in IndexedDB. An undeclared
+`emotion` emitted at runtime clamps to neutral (§10).
 
 ### Installation paths
 - **v1 (demo-safe):**

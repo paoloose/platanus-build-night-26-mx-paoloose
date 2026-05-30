@@ -1,0 +1,276 @@
+/*
+ * Monika — Web Passport persona theme.
+ * Overrides the (deliberately boring) default checkpoint/overlay styles via the
+ * stable class contract (see spec §8.5). Persona sits on the right; the consul's
+ * single streamed line and the answer box sit on the left; the offer prompt rises
+ * as a modal over a dimmed backdrop.
+ *
+ * Doki Doki aesthetic: soft cream paper, club pinks, plum ink, a literary serif.
+ */
+
+.wp-root {
+  --mnk-cream: #fff6f1;
+  --mnk-paper: #fffdfb;
+  --mnk-pink: #c44f7b;
+  --mnk-pink-soft: #f5b8d0;
+  --mnk-pink-glow: rgba(196, 79, 123, 0.35);
+  --mnk-ink: #3a2330;
+  --mnk-ink-soft: #7a5d6b;
+
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  color: var(--mnk-ink);
+  background:
+    radial-gradient(120% 90% at 85% 15%, #ffe6ef 0%, rgba(255, 230, 239, 0) 55%),
+    linear-gradient(160deg, var(--mnk-cream) 0%, #ffeef4 100%);
+}
+
+/* dialogue (left) + persona (right) */
+.wp-stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) clamp(280px, 38vw, 520px);
+  align-items: center;
+  gap: clamp(24px, 5vw, 72px);
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: clamp(24px, 6vh, 80px) clamp(24px, 6vw, 96px);
+  min-height: 100%;
+  box-sizing: border-box;
+}
+
+/* ---- persona portrait (right) ---- */
+.wp-persona {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-self: end;
+}
+
+.wp-persona__sprite {
+  width: 100%;
+  max-width: 460px;
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 24px 48px var(--mnk-pink-glow));
+  transition: transform 320ms ease, filter 320ms ease;
+  animation: mnk-breathe 6s ease-in-out infinite;
+}
+
+.wp-persona__name {
+  margin-top: 18px;
+  font-size: 20px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--mnk-pink);
+  font-weight: 600;
+}
+
+/* a soft halo behind her that warms/cools with mood */
+.wp-persona::before {
+  content: "";
+  position: absolute;
+  inset: -8% -6% 6% -6%;
+  background: radial-gradient(60% 55% at 50% 42%, var(--mnk-pink-glow), transparent 70%);
+  filter: blur(8px);
+  z-index: -1;
+}
+
+/* ---- dialogue (left) ---- */
+.wp-dialogue {
+  position: relative;
+  background: var(--mnk-paper);
+  border: 1px solid #f3d8e2;
+  border-radius: 20px;
+  padding: 30px 34px;
+  box-shadow: 0 18px 48px rgba(58, 35, 48, 0.12);
+}
+
+/* a little speech notch pointing toward Monika */
+.wp-dialogue::after {
+  content: "";
+  position: absolute;
+  top: 56px;
+  right: -13px;
+  width: 26px;
+  height: 26px;
+  background: var(--mnk-paper);
+  border-right: 1px solid #f3d8e2;
+  border-bottom: 1px solid #f3d8e2;
+  transform: rotate(-45deg);
+}
+
+.wp-dialogue__text {
+  font-size: clamp(20px, 2.4vw, 28px);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* blinking caret while the line streams in */
+.wp-dialogue__text::after {
+  content: "";
+  display: inline-block;
+  width: 2px;
+  height: 1.05em;
+  margin-left: 2px;
+  vertical-align: -0.16em;
+  background: var(--mnk-pink);
+  animation: mnk-caret 1s steps(1) infinite;
+}
+.wp-dialogue[data-streaming="false"] .wp-dialogue__text::after { display: none; }
+
+/* ---- answer box ("chat prompt") ---- */
+.wp-answer {
+  display: flex;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.wp-answer__input {
+  flex: 1;
+  font: inherit;
+  font-size: 17px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  border: 1.5px solid #f0cdda;
+  background: var(--mnk-paper);
+  color: var(--mnk-ink);
+  outline: none;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+.wp-answer__input::placeholder { color: var(--mnk-ink-soft); opacity: 0.7; }
+.wp-answer__input:focus {
+  border-color: var(--mnk-pink);
+  box-shadow: 0 0 0 4px var(--mnk-pink-glow);
+}
+
+.wp-answer__submit {
+  font: inherit;
+  font-weight: 600;
+  padding: 0 22px;
+  border: none;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #d96198, var(--mnk-pink));
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 8px 20px var(--mnk-pink-glow);
+  transition: transform 120ms ease, filter 120ms ease;
+}
+.wp-answer__submit:hover { filter: brightness(1.06); }
+.wp-answer__submit:active { transform: translateY(1px); }
+
+/* ---- offer modal (on top of everything) ---- */
+.wp-offer__backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 8, 16, 0.55);
+  backdrop-filter: blur(3px);
+  display: grid;
+  place-items: center;
+  z-index: 1000;
+  animation: mnk-fade 220ms ease both;
+}
+
+.wp-offer__card {
+  width: min(440px, 90vw);
+  background: var(--mnk-paper);
+  border-radius: 22px;
+  padding: 30px 32px;
+  text-align: center;
+  box-shadow: 0 30px 80px rgba(20, 8, 16, 0.45);
+  border-top: 4px solid var(--mnk-pink);
+  animation: mnk-rise 260ms cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+}
+
+.wp-offer__title {
+  font-size: 23px;
+  margin: 0 0 8px;
+  color: var(--mnk-ink);
+}
+
+.wp-offer__detail {
+  font-size: 15px;
+  letter-spacing: 0.04em;
+  color: var(--mnk-pink);
+  margin: 0 0 22px;
+}
+
+.wp-offer__accept,
+.wp-offer__argue {
+  font: inherit;
+  font-weight: 600;
+  font-size: 16px;
+  padding: 12px 24px;
+  border-radius: 13px;
+  cursor: pointer;
+  margin: 0 6px;
+  transition: transform 120ms ease, filter 120ms ease;
+}
+.wp-offer__accept {
+  border: none;
+  background: linear-gradient(180deg, #d96198, var(--mnk-pink));
+  color: #fff;
+  box-shadow: 0 8px 20px var(--mnk-pink-glow);
+}
+.wp-offer__argue {
+  border: 1.5px solid #e6bccb;
+  background: transparent;
+  color: var(--mnk-pink);
+}
+.wp-offer__accept:hover,
+.wp-offer__argue:hover { filter: brightness(1.05); }
+.wp-offer__accept:active,
+.wp-offer__argue:active { transform: translateY(1px); }
+
+/* ---- stamp animation ---- */
+.wp-stamp {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  z-index: 1100;
+  pointer-events: none;
+}
+.wp-stamp::before {
+  content: "PASSAGE GRANTED";
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  font-size: clamp(28px, 6vw, 64px);
+  color: var(--mnk-pink);
+  border: 6px solid var(--mnk-pink);
+  border-radius: 16px;
+  padding: 18px 34px;
+  transform: rotate(-12deg) scale(2.4);
+  opacity: 0;
+  animation: mnk-stamp 720ms cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+}
+
+/* ---- mood tinting via data-emotion on .wp-root ---- */
+.wp-root[data-emotion="worried"] { --mnk-pink: #b56aa0; }
+.wp-root[data-emotion="upset"] {
+  --mnk-pink: #9c3f6a;
+  --mnk-pink-glow: rgba(156, 63, 106, 0.4);
+}
+.wp-root[data-emotion="happy"] { --mnk-pink: #e0729f; }
+
+/* ---- keyframes ---- */
+@keyframes mnk-breathe {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+@keyframes mnk-caret { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+@keyframes mnk-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes mnk-rise {
+  from { opacity: 0; transform: translateY(18px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes mnk-stamp {
+  0% { opacity: 0; transform: rotate(-12deg) scale(2.4); }
+  60% { opacity: 1; transform: rotate(-12deg) scale(0.95); }
+  100% { opacity: 1; transform: rotate(-12deg) scale(1); }
+}
+
+@media (max-width: 720px) {
+  .wp-stage { grid-template-columns: 1fr; text-align: center; }
+  .wp-persona { order: -1; }
+  .wp-dialogue::after { display: none; }
+}

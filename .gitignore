@@ -4,4 +4,3 @@ dist
 
 # Reference-only nested repo (has its own .git)
 server/inspiration-codex-pet-share/
-# Local persona asset working dir
