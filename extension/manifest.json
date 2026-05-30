@@ -1,34 +1,38 @@
 {
   "manifest_version": 3,
-  "name": "name",
-  "version": "1.0.0",
-  "description": "an utterly necessary extension to be created",
+  "name": "Web Passport",
+  "version": "0.1.0",
+  "description": "A consul at the border of every website. State your intent, get your passport stamped.",
   "icons": {
     "16": "assets/icons/missing.png",
     "48": "assets/icons/missing.png",
     "128": "assets/icons/missing.png"
   },
   "action": {
+    "default_popup": "popup.html",
     "default_icon": {
       "16": "assets/icons/missing.png",
       "48": "assets/icons/missing.png",
       "128": "assets/icons/missing.png"
     }
   },
+  "background": {
+    "service_worker": "dist/service-worker.js",
+    "type": "module"
+  },
   "permissions": [
+    "webNavigation",
+    "declarativeNetRequest",
+    "tabs",
+    "storage",
+    "alarms",
+    "offscreen",
+    "scripting"
   ],
-  "content_scripts": [
-    {
-      "matches": [
-        "<all_urls>"
-      ],
-      "js": ["injection.js"],
-      "run_at": "document_start"
-    }
-  ],
+  "host_permissions": ["<all_urls>"],
   "web_accessible_resources": [
     {
-      "resources": ["dist/main.js"],
+      "resources": ["checkpoint.html", "dist/*", "assets/*"],
       "matches": ["<all_urls>"]
     }
   ]
