@@ -31,7 +31,19 @@ async function handleAlarm(name: string): Promise<void> {
     const stamp = await getStamp(name.slice("visa:".length));
     if (stamp) await summonOnDomain(stamp.domain, "expiry");
   } else if (name.startsWith("break:")) {
-    await endActivity(name.slice("break:".length)); // break over
+    const breakId = name.slice("break:".length);
+    // Break over: pause it, restore the most recent non-break paused activity
+    const { db: getDb } = await import("./db.ts");
+    const database = await getDb();
+    const breakAct = await database.get("activities", breakId);
+    if (breakAct) {
+      await database.put("activities", { ...breakAct, status: "paused", expiresAt: null });
+    }
+    const all = await database.getAll("activities");
+    const prev = all
+      .filter((a) => a.id !== breakId && a.status === "paused")
+      .sort((a, b) => b.createdAt - a.createdAt)[0];
+    if (prev) await setActiveActivity(prev.id);
   }
 }
 

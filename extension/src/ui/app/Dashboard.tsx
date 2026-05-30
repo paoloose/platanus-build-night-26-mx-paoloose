@@ -3,7 +3,7 @@
 // Always uses the default dark style — persona theme.css is for interrogation only.
 
 import { useEffect, useMemo, useState } from "react";
-import type { PassportActivity, Persona, Settings } from "../../types.ts";
+import type { Activity, PassportActivity, Persona, Settings } from "../../types.ts";
 import { restEmotion, spriteFor } from "../../shared/persona.ts";
 import { sendToBrain } from "../shared/messaging.ts";
 import { setSignedIn } from "./auth.ts";
@@ -37,18 +37,19 @@ export function Dashboard({ persona }: { persona: Persona }) {
     })();
   }, []);
 
-  const stats = useMemo(() => {
+  const { activeTitle, activeActivity, activities: activityCount, stamps, territories, grantedMs } = useMemo(() => {
     const acts = activities ?? [];
-    const stamps = acts.flatMap((a) => a.stamps);
-    const territories = new Set(stamps.map((s) => s.domain));
-    const grantedMs = stamps.reduce((sum, s) => sum + (s.expiresAt - s.grantedAt), 0);
+    const allStamps = acts.flatMap((a) => a.stamps);
+    const terrs = new Set(allStamps.map((s) => s.domain));
+    const granted = allStamps.reduce((sum, s) => sum + (s.expiresAt - s.grantedAt), 0);
     const active = acts.find((a) => a.status === "active");
     return {
       activeTitle: active?.title ?? "Nothing yet",
+      activeActivity: active ?? null,
       activities: acts.filter((a) => a.status !== "done").length,
-      stamps: stamps.length,
-      territories: territories.size,
-      grantedMs,
+      stamps: allStamps.length,
+      territories: terrs.size,
+      grantedMs: granted,
     };
   }, [activities]);
 
@@ -79,12 +80,15 @@ export function Dashboard({ persona }: { persona: Persona }) {
           {tab === "dashboard" && (
             <>
               <div className="wp-stat-grid">
-                <StatCard value={stats.activeTitle} label="Current activity" />
-                <StatCard value={String(stats.activities)} label="Open activities" />
-                <StatCard value={String(stats.stamps)} label="Stamps issued" />
-                <StatCard value={String(stats.territories)} label="Territories visited" />
-                <StatCard value={fmtMinutes(stats.grantedMs)} label="Time granted" />
+                <StatCard value={activeTitle} label="Current activity" />
+                <StatCard value={String(activityCount)} label="Open activities" />
+                <StatCard value={String(stamps)} label="Stamps issued" />
+                <StatCard value={String(territories)} label="Territories visited" />
+                <StatCard value={fmtMinutes(grantedMs)} label="Time granted" />
               </div>
+              {activeActivity?.title === "Break" && activeActivity.expiresAt && (
+                <BreakTimer expiresAt={activeActivity.expiresAt} />
+              )}
               {activities === null && <p className="wp-empty">Reading your passport…</p>}
             </>
           )}
@@ -109,6 +113,24 @@ function StatCard({ value, label }: { value: string; label: string }) {
     <div className="wp-stat-card">
       <div className="wp-stat-card__value">{value}</div>
       <div className="wp-stat-card__label">{label}</div>
+    </div>
+  );
+}
+
+function BreakTimer({ expiresAt }: { expiresAt: number }) {
+  const [left, setLeft] = useState(Math.max(0, expiresAt - Date.now()));
+  useEffect(() => {
+    const id = setInterval(() => setLeft(Math.max(0, expiresAt - Date.now())), 1000);
+    return () => clearInterval(id);
+  }, [expiresAt]);
+  const m = Math.floor(left / 60000);
+  const s = Math.floor((left % 60000) / 1000);
+  return (
+    <div className="wp-break-timer">
+      <div className="wp-break-timer__label">BREAK IN PROGRESS</div>
+      <div className="wp-break-timer__digits">
+        {String(m).padStart(2, "0")}:{String(s).padStart(2, "0")}
+      </div>
     </div>
   );
 }

@@ -77,6 +77,25 @@ export async function endActivity(id: string): Promise<void> {
   if (target) await database.put("activities", { ...target, status: "done" });
 }
 
+/** The predefined Break activity. Created on first use if absent. */
+const BREAK_ID = "__break__";
+export async function getOrCreateBreakActivity(): Promise<Activity> {
+  const database = await db();
+  const existing = await database.get("activities", BREAK_ID);
+  if (existing) return existing;
+  const breakActivity: Activity = {
+    id: BREAK_ID,
+    title: "Break",
+    description: "Rest period granted by the consul.",
+    status: "paused",
+    createdAt: now(),
+    expiresAt: null,
+    consulNotes: "",
+  };
+  await database.put("activities", breakActivity);
+  return breakActivity;
+}
+
 // ---- Stamps ----
 
 export async function writeStamp(stamp: Stamp): Promise<void> {

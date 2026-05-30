@@ -20,6 +20,7 @@ import {
   endActivity,
   ensureActiveActivity,
   getActiveActivity,
+  getOrCreateBreakActivity,
   newId,
   now,
   recentVisits,
@@ -163,12 +164,22 @@ export async function acceptCheckpoint(sessionId: string): Promise<BrainResponse
     }
     case "start_break_activity": {
       const minutes = Number(params.minutes) || 10;
-      const breakActivity = await createActivity({
-        title: "Break",
-        description: last.message,
+      const breakActivity = await getOrCreateBreakActivity();
+      // Update the break's expiry and make it active
+      const database = await (await import("./db.ts")).db();
+      await database.put("activities", {
+        ...breakActivity,
+        status: "active",
         expiresAt: now() + minutes * 60_000,
       });
-      chrome.alarms.create(`break:${breakActivity.id}`, { when: breakActivity.expiresAt! });
+      // Pause any other active activity
+      const allActivities = await database.getAll("activities");
+      for (const a of allActivities) {
+        if (a.id !== breakActivity.id && a.status === "active") {
+          await database.put("activities", { ...a, status: "paused" });
+        }
+      }
+      chrome.alarms.create(`break:${breakActivity.id}`, { when: now() + minutes * 60_000 });
       await commitStamp(session, { durationMinutes: minutes, maxTabs: 3 }, last.message, internalReason, {
         isBreak: true,
         activityId: breakActivity.id,
