@@ -102,6 +102,54 @@ select:focus,
 .wp-pop__switch:checked::after { transform: translateX(18px); }
 .wp-pop__debug-note { font-size: 11px; color: var(--pop-muted); margin-top: 6px; }
 
+/* not-set-up invite */
+.wp-pop--setup { align-items: center; text-align: center; padding: 14px 8px 6px; gap: 10px; }
+.wp-pop__logo { width: 96px; height: 96px; object-fit: contain; border-radius: 18px; }
+.wp-pop__welcome { font-weight: 700; font-size: 17px; }
+.wp-pop__sub { font-size: 13px; color: var(--pop-muted); margin: 0 6px; line-height: 1.5; }
+.wp-pop__setup-btn {
+  font: inherit;
+  font-weight: 700;
+  font-size: 15px;
+  padding: 12px 22px;
+  border: none;
+  border-radius: 12px;
+  background: var(--pop-accent);
+  color: #fff;
+  cursor: pointer;
+  margin-top: 4px;
+  width: 100%;
+}
+
+/* small text button (Change consul) */
+.wp-pop__textbtn {
+  font: inherit;
+  font-size: 12px;
+  padding: 0;
+  margin-top: 2px;
+  border: none;
+  background: none;
+  color: var(--pop-accent);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+/* bottom actions */
+.wp-pop__actions { display: flex; gap: 8px; }
+.wp-pop__action {
+  flex: 1;
+  font: inherit;
+  font-weight: 600;
+  font-size: 13px;
+  padding: 10px;
+  border: none;
+  border-radius: 9px;
+  background: var(--pop-accent);
+  color: #fff;
+  cursor: pointer;
+}
+.wp-pop__action--ghost { background: transparent; border: 1px solid var(--pop-border); color: var(--pop-fg); }
+
 /* key footer */
 .wp-pop__key { display: flex; flex-direction: column; gap: 6px; }
 .wp-pop__key-row { display: flex; gap: 8px; }

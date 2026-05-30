@@ -2,11 +2,19 @@
 // consul resting silently in the bottom-right corner.
 
 import { useEffect, useMemo, useState } from "react";
-import type { PassportActivity, Persona } from "../../types.ts";
+import type { PassportActivity, Persona, Settings } from "../../types.ts";
 import { restEmotion, spriteFor } from "../../shared/persona.ts";
 import { sendToBrain } from "../shared/messaging.ts";
+import { setSignedIn } from "./auth.ts";
 
-type Tab = "dashboard" | "passport";
+type Tab = "dashboard" | "passport" | "configure";
+
+const TABS: Tab[] = ["dashboard", "passport", "configure"];
+
+function initialTab(): Tab {
+  const t = new URLSearchParams(location.search).get("tab") as Tab | null;
+  return t && TABS.includes(t) ? t : "dashboard";
+}
 
 function fmtMinutes(totalMs: number): string {
   const m = Math.round(totalMs / 60000);
@@ -19,7 +27,7 @@ function fmtClock(ts: number): string {
 }
 
 export function Dashboard({ persona }: { persona: Persona }) {
-  const [tab, setTab] = useState<Tab>("dashboard");
+  const [tab, setTab] = useState<Tab>(initialTab);
   const [activities, setActivities] = useState<PassportActivity[] | null>(null);
 
   useEffect(() => {
@@ -65,6 +73,12 @@ export function Dashboard({ persona }: { persona: Persona }) {
           >
             Your passport
           </button>
+          <button
+            className={`wp-dash__tab ${tab === "configure" ? "is-active" : ""}`}
+            onClick={() => setTab("configure")}
+          >
+            Configure
+          </button>
         </nav>
       </header>
 
@@ -80,8 +94,10 @@ export function Dashboard({ persona }: { persona: Persona }) {
             </div>
             {activities === null && <p className="wp-empty">Reading your passport…</p>}
           </>
-        ) : (
+        ) : tab === "passport" ? (
           <Passport activities={activities} />
+        ) : (
+          <Configure />
         )}
       </div>
 
@@ -130,6 +146,74 @@ function Passport({ activities }: { activities: PassportActivity[] | null }) {
           ))}
         </div>
       ))}
+    </div>
+  );
+}
+
+function Configure() {
+  const [settings, setSettings] = useState<Settings | null>(null);
+  const [apiKey, setApiKey] = useState("");
+  const [saved, setSaved] = useState(false);
+
+  useEffect(() => {
+    void (async () => {
+      const res = await sendToBrain({ type: "settings:get" });
+      if (res.type === "settings") {
+        setSettings(res.settings);
+        setApiKey(res.settings.apiKey ?? "");
+      }
+    })();
+  }, []);
+
+  async function patch(p: Partial<Settings>) {
+    await sendToBrain({ type: "settings:set", patch: p });
+    setSettings((prev) => (prev ? { ...prev, ...p } : prev));
+  }
+
+  async function resetAll() {
+    await sendToBrain({ type: "settings:set", patch: { apiKey: null, enabled: true } });
+    await setSignedIn(false);
+    location.reload();
+  }
+
+  if (!settings) return <p className="wp-empty">Loading settings…</p>;
+
+  return (
+    <div className="wp-configure">
+      <section className="wp-configure__section">
+        <h3>Anthropic API key</h3>
+        <p className="wp-configure__hint">
+          Your key stays local. Blank = the demo consul (mock).
+        </p>
+        <div className="wp-configure__row">
+          <input
+            type="password"
+            value={apiKey}
+            placeholder="sk-ant-…"
+            onChange={(e) => {
+              setApiKey(e.target.value);
+              setSaved(false);
+            }}
+          />
+          <button
+            className="wp-configure__btn"
+            onClick={async () => {
+              await patch({ apiKey: apiKey || null });
+              setSaved(true);
+            }}
+          >
+            {saved ? "✓" : "Save"}
+          </button>
+        </div>
+      </section>
+
+      <section className="wp-configure__section">
+        <h3>Reset</h3>
+        <p className="wp-configure__hint">Clear all local data and start over.</p>
+        <button className="wp-configure__btn wp-configure__btn--danger" onClick={resetAll}>
+          Reset Web Passport
+        </button>
+      </section>
     </div>
   );
 }
