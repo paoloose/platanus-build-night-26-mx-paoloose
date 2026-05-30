@@ -20,6 +20,17 @@
   overflow: auto;
 }
 
+/*
+ * Overlay variant — used when the consul is injected on top of a live page
+ * (entry + mid-session interruptions). Transparent black so the page shows
+ * through, dimmed. Two classes → beats a persona's `.wp-root { background }`.
+ */
+.wp-root.wp-root--overlay {
+  background: rgba(8, 6, 12, 0.62);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+}
+
 .wp-stage {
   display: grid;
   grid-template-columns: minmax(0, 1fr) clamp(240px, 34vw, 460px);

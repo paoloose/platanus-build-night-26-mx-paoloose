@@ -1,50 +1,32 @@
-// Navigation interceptor. On a top-level navigation into a new territory with no
-// valid stamp under the active Activity, redirect the tab to the checkpoint page
-// (the destination never loads). Navigations with a valid stamp wave through.
+// Gate decision. In the overlay-first model the in-page content script asks the
+// brain, on load, whether the consul should appear — we no longer proactively
+// redirect navigations (redirect is emergency-only; see overlay.tsx + index.ts).
 
-import { domainOf, checkpointUrlFor } from "./url.ts";
+import type { OverlayMode } from "../ui/shared/messaging.ts";
+import { domainOf } from "./url.ts";
 import { findValidStamp, getActiveActivity, recordVisit } from "./state.ts";
 import { getSettings } from "./settings.ts";
 
-interface NavDetails {
-  tabId: number;
-  url: string;
-  frameId: number;
+export interface GateDecision {
+  summon: boolean;
+  mode: OverlayMode;
 }
 
-async function onBeforeNavigate(details: NavDetails): Promise<void> {
-  if (details.frameId !== 0) return; // top-level only
-
-  const domain = domainOf(details.url);
-  if (!domain) return; // extension/browser pages and non-http(s) are never gated
+/** Decide whether the consul should appear for a freshly-loaded top-level URL. */
+export async function decideForUrl(url: string, tabId: number | null): Promise<GateDecision> {
+  const domain = domainOf(url);
+  if (!domain) return { summon: false, mode: "entry" };
 
   const settings = await getSettings();
-  if (!settings.enabled) return; // global toggle off → consul stands down
+  if (!settings.enabled) return { summon: false, mode: "entry" }; // global toggle off
 
   const active = await getActiveActivity();
   if (active) {
     const stamp = await findValidStamp(domain, active.id);
     if (stamp) {
-      // Wave through — bearer holds a valid visa.
-      await recordVisit({
-        domain,
-        url: details.url,
-        tabId: details.tabId,
-        activityId: active.id,
-      });
-      return;
+      await recordVisit({ domain, url, tabId: tabId ?? -1, activityId: active.id });
+      return { summon: false, mode: "entry" }; // valid visa → wave through
     }
   }
-
-  // No valid stamp → summon the consul. Redirect cancels the in-flight navigation.
-  await chrome.tabs.update(details.tabId, { url: checkpointUrlFor(details.url) });
-}
-
-export function initInterceptor(): void {
-  chrome.webNavigation.onBeforeNavigate.addListener(
-    (details) => {
-      void onBeforeNavigate(details);
-    },
-    { url: [{ schemes: ["http", "https"] }] },
-  );
+  return { summon: true, mode: "entry" };
 }

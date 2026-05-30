@@ -30,9 +30,17 @@
     "scripting"
   ],
   "host_permissions": ["<all_urls>"],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["dist/overlay.js"],
+      "run_at": "document_start",
+      "all_frames": false
+    }
+  ],
   "web_accessible_resources": [
     {
-      "resources": ["checkpoint.html", "dist/*", "assets/*"],
+      "resources": ["checkpoint.html", "default.css", "dist/*", "assets/*"],
       "matches": ["<all_urls>"]
     }
   ]

@@ -4,7 +4,7 @@
 import { useState } from "react";
 import type { Persona } from "../../types.ts";
 import { neutralEmotion } from "../../shared/persona.ts";
-import { useTypewriter } from "../checkpoint/useTypewriter.ts";
+import { useTypewriter } from "../consul/useTypewriter.ts";
 
 interface Props {
   persona: Persona;

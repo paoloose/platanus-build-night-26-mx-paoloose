@@ -2,6 +2,9 @@
 
 import type { PassportActivity, Settings, Turn } from "../../types.ts";
 
+/** Why the consul is appearing. */
+export type OverlayMode = "entry" | "expiry" | "tablimit";
+
 export type BrainRequest =
   | { type: "ping" }
   | { type: "settings:get" }
@@ -13,7 +16,10 @@ export type BrainRequest =
   // Dashboard data
   | { type: "data:passport" }
   // Activity control
-  | { type: "activity:setActive"; id: string };
+  | { type: "activity:setActive"; id: string }
+  // Overlay (in-page consul)
+  | { type: "overlay:check"; url: string }
+  | { type: "overlay:fallback"; url: string };
 
 export type BrainResponse =
   | { type: "pong" }
@@ -26,9 +32,14 @@ export type BrainResponse =
   | { type: "checkpoint:granted"; redirectTo: string }
   | { type: "checkpoint:denied"; message: string }
   // Dashboard data
-  | { type: "passport"; activities: PassportActivity[] };
+  | { type: "passport"; activities: PassportActivity[] }
+  // Overlay
+  | { type: "overlay:decision"; summon: boolean; mode: OverlayMode };
 
 /** Send a typed request to the brain and await its typed response. */
 export async function sendToBrain(req: BrainRequest): Promise<BrainResponse> {
   return chrome.runtime.sendMessage(req) as Promise<BrainResponse>;
 }
+
+/** Brain → content-script push (mid-session interruptions). */
+export type ContentMessage = { type: "overlay:summon"; mode: OverlayMode };

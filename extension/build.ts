@@ -74,9 +74,30 @@ async function build() {
     if (!watch) process.exit(1);
     return;
   }
+  // The overlay is a CONTENT SCRIPT — content scripts can't be ESM, so it gets
+  // its own IIFE bundle.
+  const overlay = await Bun.build({
+    entrypoints: ["./src/overlay.tsx"],
+    outdir: "./dist",
+    target: "browser",
+    format: "iife",
+    naming: "[name].[ext]",
+    minify: false,
+    sourcemap: "inline",
+    define: {
+      "process.env.WEBPASSPORT_ENV": JSON.stringify(WEBPASSPORT_ENV),
+    },
+  });
+  if (!overlay.success) {
+    console.error("Overlay build failed:");
+    for (const log of overlay.logs) console.error(log);
+    if (!watch) process.exit(1);
+    return;
+  }
+
   const index = await copyPersonas();
   console.log(
-    `Build complete (${result.outputs.length} outputs, ${index?.length ?? 0} personas, env=${WEBPASSPORT_ENV})`,
+    `Build complete (${result.outputs.length + overlay.outputs.length} outputs, ${index?.length ?? 0} personas, env=${WEBPASSPORT_ENV})`,
   );
 }
 

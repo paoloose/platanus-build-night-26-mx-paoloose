@@ -4,12 +4,15 @@
 
 import type { BrainRequest, BrainResponse } from "../ui/shared/messaging.ts";
 import { getSettings, setSettings } from "./settings.ts";
-import { domainOf } from "./url.ts";
-import { initInterceptor } from "./interceptor.ts";
+import { domainOf, checkpointUrlFor } from "./url.ts";
+import { decideForUrl } from "./interceptor.ts";
 import { acceptCheckpoint, answerCheckpoint, startCheckpoint } from "./checkpoint.ts";
 import { getPassport, setActiveActivity } from "./state.ts";
 
-async function handle(req: BrainRequest): Promise<BrainResponse> {
+async function handle(
+  req: BrainRequest,
+  sender: chrome.runtime.MessageSender,
+): Promise<BrainResponse> {
   switch (req.type) {
     case "ping":
       return { type: "pong" };
@@ -40,14 +43,27 @@ async function handle(req: BrainRequest): Promise<BrainResponse> {
       await setActiveActivity(req.id);
       return { type: "ok" };
 
+    case "overlay:check": {
+      const decision = await decideForUrl(req.url, sender.tab?.id ?? null);
+      return { type: "overlay:decision", ...decision };
+    }
+
+    case "overlay:fallback": {
+      // EMERGENCY ONLY: the in-page overlay failed to render → fall back to the
+      // standalone checkpoint page by redirecting the sender's tab.
+      const tabId = sender.tab?.id;
+      if (tabId != null) await chrome.tabs.update(tabId, { url: checkpointUrlFor(req.url) });
+      return { type: "ok" };
+    }
+
     default:
       return { type: "error", error: `unknown request: ${(req as { type: string }).type}` };
   }
 }
 
 export function initBrain(): void {
-  chrome.runtime.onMessage.addListener((req: BrainRequest, _sender, sendResponse) => {
-    handle(req)
+  chrome.runtime.onMessage.addListener((req: BrainRequest, sender, sendResponse) => {
+    handle(req, sender)
       .then(sendResponse)
       .catch((err) => sendResponse({ type: "error", error: String(err) }));
     return true; // keep the message channel open for the async response
@@ -61,11 +77,13 @@ export function initBrain(): void {
     }
   });
 
-  // Visa / break expiry. The mid-session overlay summon lands in M2; for now we log.
+  // Visa / break expiry. The mid-session overlay summon (push to content script)
+  // lands in M2; for now we log.
   chrome.alarms.onAlarm.addListener((alarm) => {
     console.log("[web-passport] alarm fired (overlay summon is M2):", alarm.name);
   });
 
-  initInterceptor();
+  // Overlay-first: the in-page content script self-checks on load; no proactive
+  // navigation redirect (redirect is emergency-only, via overlay:fallback).
   console.log("[web-passport] consul brain ready");
 }
