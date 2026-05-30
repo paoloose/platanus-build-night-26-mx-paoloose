@@ -4,6 +4,9 @@ import { clerkMiddleware } from "@clerk/nextjs/server";
 // (e.g. /api/calendar/*) as they land in M4.
 export default clerkMiddleware();
 
+// Force Node.js runtime so Clerk's internal Node-only imports resolve.
+export const runtime = "nodejs";
+
 export const config = {
   matcher: [
     // Skip Next.js internals and static files

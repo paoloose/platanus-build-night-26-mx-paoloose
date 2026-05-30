@@ -1,8 +1,11 @@
-// Build-time environment. `process.env.WEBPASSPORT_*` is replaced at build by
-// a string literal (see build.ts define), so this works in the browser bundle.
+// Build-time environment. `process.env.WEBPASSPORT_ENV` is replaced at build by
+// a string literal (see build.ts define). Everything else derives from it.
 
 export const WEBPASSPORT_ENV: string = process.env.WEBPASSPORT_ENV ?? "debug";
-export const SERVER_URL: string = process.env.WEBPASSPORT_SERVER_URL ?? "http://localhost:3000";
 
 /** Debug builds expose dev-only UI (e.g. the global enable toggle). */
 export const IS_DEBUG: boolean = WEBPASSPORT_ENV !== "prod";
+
+/** Central server URL — switches by build environment. */
+export const SERVER_URL: string =
+  WEBPASSPORT_ENV === "prod" ? "https://web-passport.vercel.app" : "http://localhost:3000";

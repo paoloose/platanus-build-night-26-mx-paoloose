@@ -53,7 +53,6 @@ async function copyPersonas() {
 
 // Build-time environment: debug (default) exposes dev-only UI; prod hides it.
 const WEBPASSPORT_ENV = process.env.WEBPASSPORT_ENV ?? "debug";
-const WEBPASSPORT_SERVER_URL = process.env.WEBPASSPORT_SERVER_URL ?? "http://localhost:3000";
 
 async function build() {
   const result = await Bun.build({
@@ -61,12 +60,15 @@ async function build() {
     outdir: "./dist",
     target: "browser",
     format: "esm",
-    naming: "[name].[ext]",
+    splitting: true,
+    naming: {
+      entry: "[name].[ext]",
+      chunk: "[name]-[hash].[ext]",
+    },
     minify: false,
     sourcemap: "inline",
     define: {
       "process.env.WEBPASSPORT_ENV": JSON.stringify(WEBPASSPORT_ENV),
-      "process.env.WEBPASSPORT_SERVER_URL": JSON.stringify(WEBPASSPORT_SERVER_URL),
     },
   });
 
@@ -88,7 +90,6 @@ async function build() {
     sourcemap: "inline",
     define: {
       "process.env.WEBPASSPORT_ENV": JSON.stringify(WEBPASSPORT_ENV),
-      "process.env.WEBPASSPORT_SERVER_URL": JSON.stringify(WEBPASSPORT_SERVER_URL),
     },
   });
   if (!overlay.success) {

@@ -110,7 +110,14 @@ export function App() {
     }
   }
 
-  if (!isLoaded) return <div className="wp-pop" />;
+  if (!isLoaded) {
+    return (
+      <div className="wp-pop wp-pop--setup">
+        <div className="wp-pop__welcome">Loading consul…</div>
+        <p className="wp-pop__sub">Syncing your passport session.</p>
+      </div>
+    );
+  }
 
   // ---- Not signed in: invite to sign in ----
   if (!isSignedIn) {
