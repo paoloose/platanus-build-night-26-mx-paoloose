@@ -58,7 +58,10 @@ export function Dashboard({ persona }: { persona: Persona }) {
     <div className="wp-root wp-dash" data-emotion={restEmotion(persona)}>
       <header className="wp-dash__header">
         <div className="wp-dash__brand">
-          Web Passport <span>· {persona.name}</span>
+          <img className="wp-dash__logo" src="assets/title-logo.png" alt="Web Passport" />
+          <span className="wp-dash__brand-text">
+            <span>{persona.name}</span>
+          </span>
         </div>
         <nav className="wp-dash__tabs">
           <button

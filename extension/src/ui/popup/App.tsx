@@ -69,10 +69,10 @@ export function App() {
     return (
       <div className="wp-pop wp-pop--setup">
         <img className="wp-pop__logo" src="assets/logo.png" alt="Web Passport" />
-        <div className="wp-pop__welcome">Welcome to Web Passport</div>
-        <p className="wp-pop__sub">A consul stands at every border. Let's get you a passport.</p>
+        <div className="wp-pop__welcome">Passport Inspection</div>
+        <p className="wp-pop__sub">State your intent. Declare your mission. Begin.</p>
         <button className="wp-pop__setup-btn" onClick={() => openApp()}>
-          Set up Web Passport
+          Begin Inspection
         </button>
       </div>
     );

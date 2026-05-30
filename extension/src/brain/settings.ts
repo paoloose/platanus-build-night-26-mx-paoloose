@@ -8,7 +8,7 @@ const KEY = "settings";
 const DEFAULTS: Settings = {
   enabled: true,
   apiKey: null,
-  personaId: "monika",
+  personaId: "consul",
   clerkSession: null,
   watchRules: {},
 };

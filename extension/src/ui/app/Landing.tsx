@@ -34,7 +34,7 @@ export function Landing({ persona, onSignIn }: Props) {
     <div className="wp-root wp-landing" data-emotion={line.emotion}>
       <div className="wp-stage">
         <div className="wp-landing__intro">
-          <h1 className="wp-landing__title">Web&nbsp;Passport</h1>
+          <img className="wp-landing__logo" src="assets/title-logo.png" alt="Web Passport" />
           <p className="wp-landing__desc">
             Now you need a passport for the web. A consul stands at every border — state
             your intent, get your stamp, stay honest about where you're going.
