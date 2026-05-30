@@ -29,10 +29,17 @@ export function buildSystemPrompt(ctx: DeliberationContext): string {
     ? ctx.recentVisits.map((v) => `  - ${v.domain}`).join("\n")
     : "  (no recent history on record)";
 
+  const situation =
+    ctx.mode === "expiry"
+      ? `The traveler's visa for ${ctx.domain} has just EXPIRED — they are still on the page. Confront them: time's up. They must leave, or make a real case for more.`
+      : ctx.mode === "tablimit"
+        ? `The traveler has opened too many tabs on ${ctx.domain}, past the limit you granted. Call it out; they may argue for a higher cap.`
+        : `A traveler is at the border requesting passage to: ${ctx.domain} (${ctx.destUrl}).`;
+
   return `${persona.systemPrompt}
 
 # Your situation right now
-A traveler is at the border requesting passage to: ${ctx.domain} (${ctx.destUrl}).
+${situation}
 
 Their current Activity (the one thing they're supposed to be doing): ${activity}
 Recently visited territories:
@@ -60,12 +67,13 @@ ${examples || "  (none)"}`;
  * opening user message so the first assistant turn is the greeting/interrogation.
  */
 export function buildMessages(ctx: DeliberationContext, transcript: Turn[]): ChatMessage[] {
-  const messages: ChatMessage[] = [
-    {
-      role: "user",
-      content: `[The traveler has just arrived at the border, requesting passage to ${ctx.domain}. Greet them and begin.]`,
-    },
-  ];
+  const seed =
+    ctx.mode === "expiry"
+      ? `[The visa for ${ctx.domain} just expired and the traveler is still here. Open the confrontation.]`
+      : ctx.mode === "tablimit"
+        ? `[The traveler exceeded the tab limit on ${ctx.domain}. Open the confrontation.]`
+        : `[The traveler has just arrived at the border, requesting passage to ${ctx.domain}. Greet them and begin.]`;
+  const messages: ChatMessage[] = [{ role: "user", content: seed }];
   for (const t of transcript) {
     if (t.author === "consul") messages.push({ role: "assistant", content: t.message });
     else messages.push({ role: "user", content: t.message });

@@ -6,7 +6,7 @@
 
 import { createRoot, type Root } from "react-dom/client";
 import { ConsulSession } from "./ui/consul/ConsulSession.tsx";
-import { sendToBrain, type ContentMessage } from "./ui/shared/messaging.ts";
+import { sendToBrain, type ContentMessage, type OverlayMode } from "./ui/shared/messaging.ts";
 
 const HOST_ID = "web-passport-overlay-host";
 let mounted = false;
@@ -52,7 +52,7 @@ function rendered(shadow: ShadowRoot): boolean {
   return r.width >= window.innerWidth * 0.9 && r.height >= window.innerHeight * 0.9;
 }
 
-async function mountOverlay(dest: string): Promise<void> {
+async function mountOverlay(dest: string, mode: OverlayMode): Promise<void> {
   if (mounted) return;
   mounted = true;
   try {
@@ -72,6 +72,7 @@ async function mountOverlay(dest: string): Promise<void> {
     root.render(
       <ConsulSession
         dest={dest}
+        mode={mode}
         rootClassName="wp-root wp-root--overlay"
         styleTarget={shadow}
         onGrant={() => teardown(host, root)}
@@ -99,12 +100,12 @@ async function main(): Promise<void> {
 
   const decision = await sendToBrain({ type: "overlay:check", url: location.href });
   if (decision.type === "overlay:decision" && decision.summon) {
-    void mountOverlay(location.href);
+    void mountOverlay(location.href, decision.mode);
   }
 
-  // Mid-session interruptions (M2): the brain pushes a summon.
+  // Mid-session interruptions: the brain pushes a summon (expiry / tab-limit).
   chrome.runtime.onMessage.addListener((msg: ContentMessage): undefined => {
-    if (msg?.type === "overlay:summon") void mountOverlay(location.href);
+    if (msg?.type === "overlay:summon") void mountOverlay(location.href, msg.mode);
     return undefined;
   });
 }

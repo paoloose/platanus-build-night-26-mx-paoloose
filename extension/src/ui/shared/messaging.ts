@@ -10,7 +10,7 @@ export type BrainRequest =
   | { type: "settings:get" }
   | { type: "settings:set"; patch: Partial<Settings> }
   // Checkpoint ritual
-  | { type: "checkpoint:start"; dest: string; tabId?: number }
+  | { type: "checkpoint:start"; dest: string; tabId?: number; mode?: OverlayMode }
   | { type: "checkpoint:answer"; sessionId: string; text: string }
   | { type: "checkpoint:accept"; sessionId: string }
   // Dashboard data

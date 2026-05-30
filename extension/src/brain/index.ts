@@ -7,7 +7,50 @@ import { getSettings, setSettings } from "./settings.ts";
 import { domainOf, checkpointUrlFor } from "./url.ts";
 import { decideForUrl } from "./interceptor.ts";
 import { acceptCheckpoint, answerCheckpoint, startCheckpoint } from "./checkpoint.ts";
-import { getPassport, setActiveActivity } from "./state.ts";
+import {
+  endActivity,
+  findValidStamp,
+  getActiveActivity,
+  getPassport,
+  getStamp,
+  setActiveActivity,
+} from "./state.ts";
+import type { ContentMessage } from "../ui/shared/messaging.ts";
+
+/** Push an overlay summon to every loaded tab currently on `domain`. */
+async function summonOnDomain(domain: string, mode: ContentMessage["mode"]): Promise<void> {
+  const tabs = await chrome.tabs.query({});
+  for (const t of tabs) {
+    if (t.id == null || !t.url || domainOf(t.url) !== domain) continue;
+    chrome.tabs.sendMessage(t.id, { type: "overlay:summon", mode } satisfies ContentMessage).catch(() => {});
+  }
+}
+
+async function handleAlarm(name: string): Promise<void> {
+  if (name.startsWith("visa:")) {
+    const stamp = await getStamp(name.slice("visa:".length));
+    if (stamp) await summonOnDomain(stamp.domain, "expiry");
+  } else if (name.startsWith("break:")) {
+    await endActivity(name.slice("break:".length)); // break over
+  }
+}
+
+/** Tab-limit watch: when a domain exceeds its granted maxTabs, summon the consul. */
+async function checkTabLimit(tabId: number, url: string): Promise<void> {
+  const domain = domainOf(url);
+  if (!domain) return;
+  const settings = await getSettings();
+  if (!settings.enabled) return;
+  const active = await getActiveActivity();
+  if (!active) return;
+  const stamp = await findValidStamp(domain, active.id);
+  if (!stamp) return; // no visa → entry overlay handles it
+  const tabs = await chrome.tabs.query({});
+  const count = tabs.filter((t) => t.url && domainOf(t.url) === domain).length;
+  if (count > stamp.maxTabs) {
+    chrome.tabs.sendMessage(tabId, { type: "overlay:summon", mode: "tablimit" } satisfies ContentMessage).catch(() => {});
+  }
+}
 
 async function handle(
   req: BrainRequest,
@@ -27,7 +70,7 @@ async function handle(
     case "checkpoint:start": {
       const domain = domainOf(req.dest);
       if (!domain) return { type: "error", error: "ungated destination" };
-      return startCheckpoint(req.dest, domain, req.tabId ?? null);
+      return startCheckpoint(req.dest, domain, req.tabId ?? null, req.mode ?? "entry");
     }
 
     case "checkpoint:answer":
@@ -77,10 +120,14 @@ export function initBrain(): void {
     }
   });
 
-  // Visa / break expiry. The mid-session overlay summon (push to content script)
-  // lands in M2; for now we log.
+  // Visa expiry → summon the consul over the live page; break expiry → end it.
   chrome.alarms.onAlarm.addListener((alarm) => {
-    console.log("[web-passport] alarm fired (overlay summon is M2):", alarm.name);
+    void handleAlarm(alarm.name);
+  });
+
+  // Tab-limit watch.
+  chrome.tabs.onUpdated.addListener((tabId, info, tab) => {
+    if (info.status === "complete" && tab.url) void checkTabLimit(tabId, tab.url);
   });
 
   // Overlay-first: the in-page content script self-checks on load; no proactive

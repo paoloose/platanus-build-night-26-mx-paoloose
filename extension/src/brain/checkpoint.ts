@@ -2,7 +2,7 @@
 // accepted proposals to state.
 
 import type { Stamp } from "../types.ts";
-import type { BrainResponse } from "../ui/shared/messaging.ts";
+import type { BrainResponse, OverlayMode } from "../ui/shared/messaging.ts";
 import { deliberatorFor, type DeliberationContext } from "./agent/index.ts";
 import { isProposal } from "./agent/tools.ts";
 import { getSettings } from "./settings.ts";
@@ -34,6 +34,7 @@ async function buildContext(session: CheckpointSession): Promise<DeliberationCon
   return {
     destUrl: session.destUrl,
     domain: session.domain,
+    mode: session.mode,
     persona,
     activeActivity: await getActiveActivity(),
     recentVisits: await recentVisits(8),
@@ -64,13 +65,19 @@ async function nextConsulTurn(session: CheckpointSession): Promise<CheckpointSes
   return appendTurn(session, turn);
 }
 
-export async function startCheckpoint(dest: string, domain: string, tabId: number | null) {
+export async function startCheckpoint(
+  dest: string,
+  domain: string,
+  tabId: number | null,
+  mode: OverlayMode = "entry",
+) {
   const settings = await getSettings();
   const session = await createSession({
     destUrl: dest,
     domain,
     tabId,
     personaId: settings.personaId,
+    mode,
   });
   const withTurn = await nextConsulTurn(session);
   const turn = withTurn.transcript[withTurn.transcript.length - 1]!;

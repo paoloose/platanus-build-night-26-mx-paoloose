@@ -8,7 +8,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { Persona, Turn } from "../../types.ts";
 import { loadPersona } from "../../shared/persona.ts";
 import { isProposal } from "../../brain/agent/tools.ts";
-import { sendToBrain, type BrainResponse } from "../shared/messaging.ts";
+import { sendToBrain, type BrainResponse, type OverlayMode } from "../shared/messaging.ts";
 import { applyTheme } from "../shared/theme.ts";
 import { useTypewriter } from "./useTypewriter.ts";
 import { ConsulStage } from "./ConsulStage.tsx";
@@ -20,6 +20,8 @@ type Phase = "loading" | "talking" | "denied" | "error";
 export interface ConsulSessionProps {
   /** Destination URL being negotiated. */
   dest: string;
+  /** Why the consul appeared (entry default, or a mid-session interruption). */
+  mode?: OverlayMode;
   /** Root class — e.g. "wp-root" (page) or "wp-root wp-root--overlay" (overlay). */
   rootClassName: string;
   /** Where to inject the persona theme (document for the page, shadow root for overlay). */
@@ -34,6 +36,7 @@ export interface ConsulSessionProps {
 
 export function ConsulSession({
   dest,
+  mode = "entry",
   rootClassName,
   styleTarget,
   onGrant,
@@ -54,7 +57,7 @@ export function ConsulSession({
 
   useEffect(() => {
     void (async () => {
-      const res = await sendToBrain({ type: "checkpoint:start", dest });
+      const res = await sendToBrain({ type: "checkpoint:start", dest, mode });
       if (res.type === "checkpoint:started") {
         const p = await loadPersona(res.personaId);
         applyTheme(p, styleTarget);
@@ -69,7 +72,7 @@ export function ConsulSession({
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dest]);
+  }, [dest, mode]);
 
   function consume(res: BrainResponse) {
     if (res.type === "checkpoint:turn") {

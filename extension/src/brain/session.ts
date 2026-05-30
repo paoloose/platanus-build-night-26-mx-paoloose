@@ -2,6 +2,7 @@
 // survives a service-worker restart mid-conversation (cleared when the browser closes).
 
 import type { Turn } from "../types.ts";
+import type { OverlayMode } from "../ui/shared/messaging.ts";
 
 export interface CheckpointSession {
   id: string;
@@ -9,6 +10,7 @@ export interface CheckpointSession {
   domain: string;
   tabId: number | null;
   personaId: string;
+  mode: OverlayMode;
   transcript: Turn[];
   status: "open" | "granted" | "denied";
   createdAt: number;
@@ -21,6 +23,7 @@ export async function createSession(input: {
   domain: string;
   tabId: number | null;
   personaId: string;
+  mode: OverlayMode;
 }): Promise<CheckpointSession> {
   const session: CheckpointSession = {
     id: crypto.randomUUID(),

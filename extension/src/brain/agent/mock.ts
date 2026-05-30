@@ -30,8 +30,22 @@ export const deliberateMock: Deliberate = async (ctx, transcript) => {
   const userAnswers = transcript.filter((t) => t.author === "user");
   const lastUser = userAnswers[userAnswers.length - 1];
 
-  // Opening: interrogate.
+  // Opening: interrogate (varies by why the consul appeared).
   if (userAnswers.length === 0) {
+    if (ctx.mode === "expiry") {
+      return consulTurn({
+        tool: "say",
+        emotion: emotion(ctx, "worried", "upset"),
+        message: `Time's up at ${ctx.domain}. Your visa expired. Leave now — or tell me why I should give you more.`,
+      });
+    }
+    if (ctx.mode === "tablimit") {
+      return consulTurn({
+        tool: "say",
+        emotion: emotion(ctx, "worried", "upset"),
+        message: `That's more tabs on ${ctx.domain} than I allowed. Explain yourself, or close some.`,
+      });
+    }
     return consulTurn({
       tool: "say",
       emotion: emotion(ctx, "curious"),

@@ -83,6 +83,10 @@ export async function writeStamp(stamp: Stamp): Promise<void> {
   await (await db()).put("stamps", stamp);
 }
 
+export async function getStamp(id: string): Promise<Stamp | undefined> {
+  return (await db()).get("stamps", id);
+}
+
 /**
  * The valid stamp (if any) authorizing entry to `domain` under `activityId`:
  * not expired. Tab-cap enforcement lands in M2. Returns the latest-expiring match.
