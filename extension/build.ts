@@ -18,6 +18,30 @@ const entrypoints = [
   "./src/popup.tsx",
 ];
 
+// Copy bundled persona packages into dist/personas/ so the extension can fetch
+// them at runtime (the default persona ships inside the extension). Source of
+// truth is the repo-root personas/ folder.
+async function copyPersonas() {
+  const { cp, mkdir, readdir } = await import("node:fs/promises");
+  const src = "../personas";
+  const dest = "./dist/personas";
+  await mkdir(dest, { recursive: true });
+  let names: string[] = [];
+  try {
+    names = (await readdir(src, { withFileTypes: true }))
+      .filter((d) => d.isDirectory())
+      .map((d) => d.name);
+  } catch {
+    return;
+  }
+  for (const name of names) {
+    // Skip personas without a manifest (e.g. an empty work-in-progress folder).
+    if (!(await Bun.file(`${src}/${name}/persona.json`).exists())) continue;
+    await cp(`${src}/${name}`, `${dest}/${name}`, { recursive: true });
+  }
+  return names;
+}
+
 async function build() {
   const result = await Bun.build({
     entrypoints,
@@ -35,7 +59,8 @@ async function build() {
     if (!watch) process.exit(1);
     return;
   }
-  console.log(`Build complete (${result.outputs.length} outputs)`);
+  await copyPersonas();
+  console.log(`Build complete (${result.outputs.length} outputs + personas)`);
 }
 
 await build();

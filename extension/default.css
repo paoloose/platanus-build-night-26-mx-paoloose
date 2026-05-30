@@ -1,0 +1,175 @@
+/*
+ * Web Passport — DEFAULT checkpoint/overlay styles.
+ * Deliberately plain. Personas override these via theme.css against this stable
+ * class contract (spec §8.5). Structure here; personality there.
+ */
+
+.wp-root {
+  --wp-bg: #1c1c22;
+  --wp-fg: #e8e8ee;
+  --wp-muted: #9a9aa6;
+  --wp-accent: #6b7cff;
+  --wp-card: #26262e;
+  --wp-border: #3a3a44;
+
+  position: fixed;
+  inset: 0;
+  background: var(--wp-bg);
+  color: var(--wp-fg);
+  font-family: system-ui, -apple-system, sans-serif;
+  overflow: auto;
+}
+
+.wp-stage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) clamp(240px, 34vw, 460px);
+  align-items: center;
+  gap: 48px;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 64px 48px;
+  min-height: 100%;
+  box-sizing: border-box;
+}
+
+/* persona portrait (right) */
+.wp-persona {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-self: end;
+}
+.wp-persona__sprite {
+  width: 100%;
+  max-width: 420px;
+  height: auto;
+  object-fit: contain;
+}
+.wp-persona__name {
+  margin-top: 14px;
+  font-size: 17px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--wp-muted);
+}
+
+/* dialogue (left) */
+.wp-dialogue {
+  background: var(--wp-card);
+  border: 1px solid var(--wp-border);
+  border-radius: 14px;
+  padding: 26px 28px;
+}
+.wp-dialogue__text {
+  font-size: clamp(19px, 2.2vw, 26px);
+  line-height: 1.5;
+  margin: 0;
+}
+.wp-dialogue__text::after {
+  content: "";
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: 2px;
+  vertical-align: -0.15em;
+  background: var(--wp-accent);
+  animation: wp-caret 1s steps(1) infinite;
+}
+.wp-dialogue[data-streaming="false"] .wp-dialogue__text::after { display: none; }
+
+/* answer box */
+.wp-answer {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+.wp-answer__input {
+  flex: 1;
+  font: inherit;
+  font-size: 16px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--wp-border);
+  background: #1f1f26;
+  color: var(--wp-fg);
+  outline: none;
+}
+.wp-answer__input:focus { border-color: var(--wp-accent); }
+.wp-answer__submit {
+  font: inherit;
+  font-weight: 600;
+  padding: 0 20px;
+  border: none;
+  border-radius: 10px;
+  background: var(--wp-accent);
+  color: #fff;
+  cursor: pointer;
+}
+.wp-answer__submit:disabled { opacity: 0.5; cursor: default; }
+
+/* offer modal */
+.wp-offer__backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: grid;
+  place-items: center;
+  z-index: 1000;
+}
+.wp-offer__card {
+  width: min(420px, 90vw);
+  background: var(--wp-card);
+  border: 1px solid var(--wp-border);
+  border-radius: 16px;
+  padding: 28px;
+  text-align: center;
+}
+.wp-offer__title { font-size: 21px; margin: 0 0 8px; }
+.wp-offer__detail { font-size: 14px; color: var(--wp-muted); margin: 0 0 22px; }
+.wp-offer__accept,
+.wp-offer__argue {
+  font: inherit;
+  font-weight: 600;
+  font-size: 15px;
+  padding: 11px 22px;
+  border-radius: 10px;
+  cursor: pointer;
+  margin: 0 6px;
+}
+.wp-offer__accept { border: none; background: var(--wp-accent); color: #fff; }
+.wp-offer__argue { border: 1px solid var(--wp-border); background: transparent; color: var(--wp-fg); }
+
+/* stamp animation */
+.wp-stamp {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  z-index: 1100;
+  pointer-events: none;
+}
+.wp-stamp::before {
+  content: "PASSAGE GRANTED";
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  font-size: clamp(24px, 5vw, 56px);
+  color: var(--wp-accent);
+  border: 5px solid var(--wp-accent);
+  border-radius: 12px;
+  padding: 16px 30px;
+  transform: rotate(-12deg) scale(2.2);
+  opacity: 0;
+  animation: wp-stamp 700ms cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+}
+
+@keyframes wp-caret { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+@keyframes wp-stamp {
+  0% { opacity: 0; transform: rotate(-12deg) scale(2.2); }
+  60% { opacity: 1; transform: rotate(-12deg) scale(0.95); }
+  100% { opacity: 1; transform: rotate(-12deg) scale(1); }
+}
+
+@media (max-width: 720px) {
+  .wp-stage { grid-template-columns: 1fr; text-align: center; }
+  .wp-persona { order: -1; }
+}

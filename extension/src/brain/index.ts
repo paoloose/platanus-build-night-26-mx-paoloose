@@ -1,19 +1,37 @@
 // The Consul Brain — runs in the MV3 background service worker.
-// Single source of truth: owns settings, state, the agent loop (M1+), and alarms.
-// In M0 this wires the message router and lifecycle hooks; logic lands in M1.
+// Single source of truth: settings, state (IndexedDB), the agent loop, sessions,
+// the navigation interceptor, and alarms.
 
 import type { BrainRequest, BrainResponse } from "../ui/shared/messaging.ts";
 import { getSettings, setSettings } from "./settings.ts";
+import { domainOf } from "./url.ts";
+import { initInterceptor } from "./interceptor.ts";
+import { acceptCheckpoint, answerCheckpoint, startCheckpoint } from "./checkpoint.ts";
 
 async function handle(req: BrainRequest): Promise<BrainResponse> {
   switch (req.type) {
     case "ping":
       return { type: "pong" };
+
     case "settings:get":
       return { type: "settings", settings: await getSettings() };
+
     case "settings:set":
       await setSettings(req.patch);
       return { type: "ok" };
+
+    case "checkpoint:start": {
+      const domain = domainOf(req.dest);
+      if (!domain) return { type: "error", error: "ungated destination" };
+      return startCheckpoint(req.dest, domain, req.tabId ?? null);
+    }
+
+    case "checkpoint:answer":
+      return answerCheckpoint(req.sessionId, req.text);
+
+    case "checkpoint:accept":
+      return acceptCheckpoint(req.sessionId);
+
     default:
       return { type: "error", error: `unknown request: ${(req as { type: string }).type}` };
   }
@@ -31,10 +49,11 @@ export function initBrain(): void {
     console.log("[web-passport] consul brain installed");
   });
 
-  // Alarm handler (visa/break expiry) — wired in M1/M2.
+  // Visa / break expiry. The mid-session overlay summon lands in M2; for now we log.
   chrome.alarms.onAlarm.addListener((alarm) => {
-    console.log("[web-passport] alarm fired (no-op in M0):", alarm.name);
+    console.log("[web-passport] alarm fired (overlay summon is M2):", alarm.name);
   });
 
+  initInterceptor();
   console.log("[web-passport] consul brain ready");
 }
