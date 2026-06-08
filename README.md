@@ -13,25 +13,10 @@ Hacker:
 - Paolo Luis Flores Cóngora ([@paoloose](https://github.com/paoloose))
 
 
-## ⚠️ Deploying (Vercel, Render, etc.)
+## Gallery
 
-Deploy platforms like **Vercel**, **Render** or **Netlify** can only connect to
-repositories **you own** — they can't be granted access to this organization repo.
-To deploy while keeping your commits here, mirror your code to a personal repo:
+<img width="1919" height="1089" alt="image" src="https://github.com/user-attachments/assets/1be6125e-8863-4bf4-bd26-e93c2c04411f" />
 
-1. Create a **personal** repository on your own GitHub account.
-2. Point your local `origin` at **both** repos, so a single `git push` updates each one:
+<img width="1149" height="718" alt="ss" src="https://github.com/user-attachments/assets/969fcb3c-04cc-4daa-ac41-ed1a82c5e10e" />
 
-   ```bash
-   # this org repo (keep it as a push target)...
-   git remote set-url --add --push origin https://github.com/platanus-build-night/platanus-build-night-26-mx-paoloose.git
-   # ...and your personal repo
-   git remote set-url --add --push origin https://github.com/<your-user>/<your-repo>.git
-   ```
-
-   From now on `git push` sends every commit to **both** repositories.
-3. Connect your deploy service (Vercel, Render, …) to your **personal** repo and deploy from there.
-
-Your commits stay mirrored here for judging, while the deploy runs from the repo you control.
-
-Have fun! 🚀
+<img width="1158" height="730" alt="image" src="https://github.com/user-attachments/assets/d4da6516-2c61-4765-ac08-966633414c35" />
